@@ -4,6 +4,60 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### [4.0.0] - 2018-02-17
+### Breaking Changes
+- remove support for EOL ruby `< 2.3` as they are EOL (@majormoses)
+
+### Changed
+- appease the cops (@majormoses)
+
+## [3.0.1] - 2018-01-07
+### Fixed
+- locked `mixlib-cli` dep to `~> 1.5` as `2.0` removes ruby support for `< 2.5` (@majormoses)
+
+## [3.0.0] - 2018-12-04
+### Breaking Changes
+- renamed event mapping utility function `map_v2_event_into_v1` to match naming change to Sensu Go `map_go_event_into_ruby` (@jspaleta)
+- renamed mutator and handler mixin arguments from `--map-v2-event-into-v1` to match naming change to Sensu Go `--map-go-event-into-ruby` (@jspaleta)
+- renamed envar option from `SENSU_MAP_V2_EVENT_INTO_V1` to `SENSU_MAP_GO_EVENT_INTO_RUBY` (@jspaleta)
+- updated `map_go_event_into_ruby` logic to account for entity attribute refactor (@jspaleta)
+-
+### Added
+- `map_go_event_info_ruby` now takes optional `map_annotation` argument to indicate annotation key
+  holding json string to be mapped into ruby entity attributes
+  default value is "sensu.io.json_attributes"
+  optional envvar SENSU_MAP_ANNOTATION to use as environment override (@jspaleta)
+- add mutator-go-into-ruby.rb  binary. This mutator command can be used to mutate Sensu Go events into Sensu Core 1.x events (@jspaleta)
+
+## [2.7.0] - 2018-09-12
+### Added
+- Added map_v2_event_into_v1 method to Utils for all plugin classes to use. (@jspaleta)
+- Added --map-v2-event-into-v1 runtime commandline option to base Handler and Mutator classes. (@jspaleta)
+- Alternatively set envvar SENSU_MAP_V2_EVENT_INTO_V1=1 and handlers/mutators will automatically attempt to map 2.x event data. (@jspaleta)
+- New cli option/envvar makes it possible to use sensu-plugin based handlers/mutators
+  with Sensu 2.0 events until they provide native 2.0 event support internally. (@jspaleta)
+- Mapping function sets and checks for boolean event attribute 'v2_event_mapped_into_v1',
+  to prevent mapping from running multiple times in same pipeline. (@jspaleta)
+
+## [2.6.0] - 2018-08-28
+### Fixed
+- Fix `paginated_get` for backward compatibility with Sensu API < 1.4 (@cwjohnston).
+
+## [2.6.0] - 2018-08-28
+### Added
+- Added utils method `paginated_get` for iteratively retrieving API responses (@cwjohnston).
+
+## [2.5.0] - 2018-04-03
+### Added
+- Added Handler Sensu API HTTPS support through API configuration (e.g. `{"api": {"ssl": {}}` (@portertech).
+
+## [2.4.0] - 2018-02-08
+### Added
+- Added subclass for Generic metrics output to support multiple metrics output formats (@bergerx)
+
+### Changed
+- updated metrics class inheritance hierarchy (@bergerx)
+
 ## [2.3.0] - 2017-08-17
 ### Added
 - Added subclass for InfluxDB output (@luisdavim)
@@ -114,7 +168,15 @@ The changes in earlier releases are not fully documented but comparison links ar
 * [v0.1.1]
 * [v0.1.0]
 
-[Unreleased]: https://github.com/sensu-plugins/sensu-plugin/compare/2.3.0...HEAD
+[Unreleased]: https://github.com/sensu-plugins/sensu-plugin/compare/4.0.0...HEAD
+[4.0.0]: https://github.com/sensu-plugins/sensu-plugin/compare/3.0.1...4.0.0
+[3.0.1]: https://github.com/sensu-plugins/sensu-plugin/compare/3.0.0...3.0.1
+[3.0.0]: https://github.com/sensu-plugins/sensu-plugin/compare/2.7.0...3.0.0
+[2.7.0]: https://github.com/sensu-plugins/sensu-plugin/compare/2.6.1...2.7.0
+[2.6.1]: https://github.com/sensu-plugins/sensu-plugin/compare/2.6.0...2.6.1
+[2.6.0]: https://github.com/sensu-plugins/sensu-plugin/compare/2.5.0...2.6.0
+[2.5.0]: https://github.com/sensu-plugins/sensu-plugin/compare/2.4.0...2.5.0
+[2.4.0]: https://github.com/sensu-plugins/sensu-plugin/compare/2.3.0...2.4.0
 [2.3.0]: https://github.com/sensu-plugins/sensu-plugin/compare/2.2.0...2.3.0
 [2.2.0]: https://github.com/sensu-plugins/sensu-plugin/compare/v2.1.0...2.2.0
 [v2.1.0]: https://github.com/sensu-plugins/sensu-plugin/compare/v2.0.1...v2.1.0

@@ -1,4 +1,6 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: false
+
 #
 # Sensu-mutator
 # ===
@@ -34,6 +36,10 @@ module Sensu
   class Mutator
     include Sensu::Plugin::Utils
     include Mixlib::CLI
+    option :map_go_event_into_ruby,
+           description: 'Enable Sensu Go to Sensu Ruby event mapping. Alternatively set envvar SENSU_MAP_GO_EVENT_INTO_RUBY=1.',
+           boolean:     true,
+           long:        '--map-go-event-into-ruby'
 
     attr_accessor :argv
 
@@ -67,6 +73,15 @@ module Sensu
       return unless @@autorun
       mutator = @@autorun.new
       mutator.read_event(STDIN)
+
+      TRUTHY_VALUES = %w[1 t true yes y].freeze
+      automap = ENV['SENSU_MAP_GO_EVENT_INTO_RUBY'].to_s.downcase
+
+      if mutator.config[:map_go_event_into_ruby] || TRUTHY_VALUES.include?(automap)
+        new_event = mutator.map_go_event_into_ruby
+        mutator.event = new_event
+      end
+
       mutator.mutate
       mutator.dump
     end

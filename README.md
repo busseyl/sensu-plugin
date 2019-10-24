@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/sensu-plugins/sensu-plugin.svg?branch=master)](https://travis-ci.org/sensu-plugins/sensu-plugin)
 [![Gem Version](https://badge.fury.io/rb/sensu-plugin.svg)](http://badge.fury.io/rb/sensu-plugin)
 [![Dependency Status](https://gemnasium.com/sensu-plugins/sensu-plugin.svg)](https://gemnasium.com/sensu-plugins/sensu-plugin)
+[![pullreminders](https://pullreminders.com/badge.svg)](https://pullreminders.com?ref=badge)
 
 This is a framework for writing your own Sensu plugins and handlers.
 It's not required to write a plugin (most Nagios plugins will work
@@ -52,6 +53,7 @@ For a metric, you can subclass one of the following:
  * `Sensu::Plugin::Metric::CLI::Statsd`
  * `Sensu::Plugin::Metric::CLI::Dogstatsd`
  * `Sensu::Plugin::Metric::CLI::Influxdb`
+ * `Sensu::Plugin::Metric::CLI::Generic`
 
 Instead of outputting a Nagios-style line of text, these classes will output
 differently formated messages depending on the class you chose.
@@ -116,17 +118,33 @@ class MyInfluxdbMetric < Sensu::Plugin::Metric::CLI::Influxdb
 end
 ```
 
-JSON output takes one argument (the object), and adds a 'timestamp' key
-if missing. Graphite output takes two arguments, the metric path and the
-value, and optionally the timestamp as a third argument. `Time.now.to_i`
-is used for the timestamp if it is not specified. Statsd output takes three
-arguments, the metric path, the value and the type. Dogstatsd output takes
-three arguments, the metric path, the value, the type and optionally a comma
-separated list of tags, use colons for key/value tags, i.e. `env:prod`.
-Influxdb output takes two arguments, the measurement name and the value or a
-comma separated list of values, use `=` for field/value, i.e. `value=42`,
-optionally you can also pass a comma separated list of tags and a timestamp
-`Time.now.to_i` is used for the timestamp if it is not specified.
+```ruby
+require 'sensu-plugin/metric/cli'
+
+class MyInfluxdbMetric < Sensu::Plugin::Metric::CLI::Generic
+
+  def run
+    ok metric_name: 'metric.name', value: 0
+  end
+
+end
+```
+
+**JSON output** takes one argument (the object), and adds a 'timestamp'
+key if missing. **Graphite output** takes two arguments, the metric path
+and the value, and optionally the timestamp as a third argument.
+`Time.now.to_i` is used for the timestamp if it is not
+specified. **Statsd output** takes three arguments, the metric path, the
+value and the type.  **Dogstatsd output** takes three arguments, the
+metric path, the value, the type and optionally a comma separated list
+of tags, use colons for key/value tags, i.e.  `env:prod`.  **Influxdb
+output** takes two arguments, the measurement name and the value or a
+comma separated list of values, use `=` for field/value,
+i.e. `value=42`, optionally you can also pass a comma separated list of
+tags and a timestamp `Time.now.to_i` is used for the timestamp if it is
+not specified.  **Generic output** takes a dictionary and can provide
+requested output format with same logic. And inherited class will have a
+`--metric_format` option to switch between different output formats.
 
 Exit codes do not affect metric output, but they can still be used by
 your handlers.
@@ -224,6 +242,20 @@ def foo_enabled?
   settings['my_custom_plugin']['foo']
 end
 ```
+
+## Sensu Go enablement
+
+This plugin provides basic Sensu Go enablement support to make it possible to continue to use existing Sensu plugin handlers and mutators for Sensu Core 1.x event model in a backwards compatible fashion.
+
+### Sensu Go event mapping
+
+The provided mutator command `mutator-sensu-go-into-ruby.rb` will mutate the Sensu Go event into a form compatible for handlers written to consume Sensu Core 1.x events.  Users may find this mutator useful until such time that community plugin handler are updated to support Sensu Go event model directly.
+
+Sensu plugins which provide either mutators or handlers can benefit from provided Sensu Go enablement support in the form of mixin commandline option support.  Once plugins update to the latest sensu-plugin version, all mutator and handler commands will automatically grow an additional commandline argument `--map_go_event_into_ruby`
+
+### Custom attributes
+
+For backwards compatibility, you can store custom entity and check attributes as a json string in a specially named annotation. By default the annotation key is `sensu.io.json_attributes`, but can be overridden using the environment variable `MAP_ANNOTATION`.  The json string stored in the `MAP_ANNOTATION` key will be converted into a ruby hash and merged into the ruby event hash object as part of the event mapping.  
 
 ## Contributing
 

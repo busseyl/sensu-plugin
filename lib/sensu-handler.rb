@@ -1,3 +1,5 @@
+# frozen_string_literal: false
+
 require 'net/http'
 require 'timeout'
 require 'uri'
@@ -9,6 +11,10 @@ module Sensu
   class Handler
     include Sensu::Plugin::Utils
     include Mixlib::CLI
+    option :map_go_event_into_ruby,
+           description: 'Enable Sensu Go to Sensu Ruby event mapping. Alternatively set envvar SENSU_MAP_GO_EVENT_INTO_RUBY=1.',
+           boolean:     true,
+           long:        '--map-go-event-into-ruby'
 
     attr_accessor :argv
 
@@ -73,6 +79,14 @@ module Sensu
       if @@autorun
         handler = @@autorun.new
         handler.read_event(STDIN)
+
+        TRUTHY_VALUES = %w[1 t true yes y].freeze
+        automap = ENV['SENSU_MAP_GO_EVENT_INTO_RUBY'].to_s.downcase
+
+        if handler.config[:map_go_event_into_ruby] || TRUTHY_VALUES.include?(automap)
+          new_event = handler.map_go_event_into_ruby
+          handler.event = new_event
+        end
         handler.filter
         handler.handle
       end
@@ -97,46 +111,6 @@ module Sensu
       check_name = @event['check']['name'] || 'error:no-check-name'
       puts "#{msg}: #{client_name}/#{check_name}"
       exit 0
-    end
-
-    # Return a hash of API settings derived first from ENV['SENSU_API_URL'] if set,
-    # then Sensu config `api` scope if configured, and finally falling back to
-    # to ipv4 localhost address on default API port.
-    #
-    # @return [Hash]
-    def api_settings
-      return @api_settings if @api_settings
-      if ENV['SENSU_API_URL']
-        uri = URI(ENV['SENSU_API_URL'])
-        @api_settings = {
-          'host' => uri.host,
-          'port' => uri.port,
-          'user' => uri.user,
-          'password' => uri.password
-        }
-      else
-        @api_settings = settings['api'] || {}
-        @api_settings['host'] ||= '127.0.0.1'
-        @api_settings['port'] ||= 4567
-      end
-      @api_settings
-    end
-
-    def api_request(method, path, &_blk)
-      if api_settings.nil?
-        raise 'api.json settings not found.'
-      end
-      domain = api_settings['host'].start_with?('http') ? api_settings['host'] : 'http://' + api_settings['host']
-      uri = URI("#{domain}:#{api_settings['port']}#{path}")
-      req = net_http_req_class(method).new(uri.path)
-      if api_settings['user'] && api_settings['password']
-        req.basic_auth(api_settings['user'], api_settings['password'])
-      end
-      yield(req) if block_given?
-      res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == 'https') do |http|
-        http.request(req)
-      end
-      res
     end
 
     def filter_disabled
